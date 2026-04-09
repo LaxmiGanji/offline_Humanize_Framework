@@ -86,9 +86,9 @@ class OfflineHumanizer:
         return text
     
     def _basic_clean(self, text):
-        """Remove any garbage characters"""
-        # Keep only alphanumeric, spaces, and basic punctuation
-        text = re.sub(r'[^\w\s\.\,\!\?\-\']', '', text)
+        """Clean text safely without destroying common punctuation"""
+        # Remove zero-width spaces or hidden formatting characters
+        text = re.sub(r'[\u200b\u200c\u200d\ufeff]', '', text)
         # Remove multiple spaces
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
@@ -119,7 +119,14 @@ class OfflineHumanizer:
                     modified.append(sent)
                 elif i < len(sentences) - 1 and random.random() > 0.7:
                     # Add transition
-                    modified.append(random.choice(self.transitions) + " " + sent[0].lower() + sent[1:])
+                    first_word = sent.split()[0] if sent.split() else ""
+                    first_char = sent[0].lower()
+                    
+                    # Prevent lowercasing 'I' or common titled terms
+                    if first_word in ["I", "I'm", "I'll", "I've", "I'd", "Dr.", "Mr.", "Mrs.", "Ms.", "Dr", "Mr", "Mrs", "Ms"]:
+                        first_char = sent[0]
+                        
+                    modified.append(random.choice(self.transitions) + " " + first_char + sent[1:])
                 else:
                     modified.append(sent)
             text = ' '.join(modified)
@@ -140,7 +147,13 @@ class OfflineHumanizer:
                     # Check if already has personal phrase
                     if not any(p in sent.lower()[:20] for p in ["i think", "i feel", "in my"]):
                         personal = random.choice(self.personal_phrases)
-                        sent = personal + sent[0].lower() + sent[1:]
+                        first_word = sent.split()[0] if sent.split() else ""
+                        first_char = sent[0].lower()
+                        
+                        if first_word in ["I", "I'm", "I'll", "I've", "I'd", "Dr.", "Mr.", "Mrs.", "Ms.", "Dr", "Mr", "Mrs", "Ms"]:
+                            first_char = sent[0]
+                            
+                        sent = personal + first_char + sent[1:]
                 modified.append(sent)
             text = ' '.join(modified)
         
